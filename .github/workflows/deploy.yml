@@ -33,4 +33,11 @@ jobs:
         run: sam build --use-container
 
       - name: Deploy do Lambda
-        run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset
+        run: |
+          sam deploy \
+            --stack-name api-gateway-auth-stack \
+            --resolve-s3 \
+            --capabilities CAPABILITY_IAM \
+            --region us-east-1 \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset
