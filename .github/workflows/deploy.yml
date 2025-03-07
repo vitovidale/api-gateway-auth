@@ -20,12 +20,17 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      - name: Instalar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Instalar AWS SAM CLI
         run: |
           pip install aws-sam-cli
 
       - name: Build do Lambda
-        run: sam build
+        run: sam build --use-container
 
       - name: Deploy do Lambda
         run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset
