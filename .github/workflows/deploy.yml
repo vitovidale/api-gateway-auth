@@ -3,8 +3,8 @@ name: Deploy AWS Lambda (Go)
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:  
+      - develop
+  workflow_dispatch:  # ✅ Allows manual deployment trigger
 
 jobs:
   deploy:
@@ -25,6 +25,13 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: 1.23.4
+
+      - name: Initialize Go Modules (if missing)
+        run: |
+          if [ ! -f go.mod ]; then
+            go mod init lambda-function
+          fi
+          go mod tidy
 
       - name: Build Go Binary for AWS Lambda
         run: |
@@ -51,6 +58,19 @@ jobs:
             --handler bootstrap \
             --zip-file fileb://lambda.zip \
             --architectures x86_64
+
+      - name: Wait for Lambda to Be Ready
+        run: |
+          echo "Waiting for Lambda to be in Active state..."
+          while true; do
+            state=$(aws lambda get-function --function-name AuthCPF --query 'Configuration.State' --output text)
+            if [[ "$state" == "Active" ]]; then
+              echo "Lambda is now active."
+              break
+            fi
+            echo "Lambda is still in $state state. Waiting..."
+            sleep 10
+          done
 
       - name: Update Lambda Function Code (if exists)
         if: env.LAMBDA_EXISTS == 'true'
