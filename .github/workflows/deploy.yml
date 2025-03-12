@@ -3,7 +3,7 @@ name: Deploy AWS Lambda (Go)
 on:
   push:
     branches:
-      - develop  # Change to main if needed
+      - develop  # Change to "main" if needed
 
 jobs:
   deploy:
@@ -18,19 +18,41 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: us-east-1  # Change if needed
 
-      - name: Set Up Golang
+      - name: Set Up Golang 1.23.4
         uses: actions/setup-go@v4
         with:
-          go-version: 1.21
+          go-version: 1.23.4
 
       - name: Build Go Binary for AWS Lambda
         run: |
           GOOS=linux GOARCH=amd64 go build -o bootstrap main.go
           zip lambda.zip bootstrap
 
-      - name: Deploy Lambda Function
+      - name: Check if Lambda Exists
+        id: check_lambda
+        run: |
+          if aws lambda get-function --function-name AuthCPF; then
+            echo "LAMBDA_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "LAMBDA_EXISTS=false" >> $GITHUB_ENV
+          fi
+        continue-on-error: true
+
+      - name: Create Lambda Function (if not exists)
+        if: env.LAMBDA_EXISTS == 'false'
+        run: |
+          aws lambda create-function \
+            --function-name AuthCPF \
+            --runtime provided.al2 \
+            --role arn:aws:iam::<AWS_ACCOUNT_ID>:role/<LAMBDA_EXECUTION_ROLE> \
+            --handler bootstrap \
+            --zip-file fileb://lambda.zip \
+            --architectures x86_64
+
+      - name: Update Lambda Function Code (if exists)
+        if: env.LAMBDA_EXISTS == 'true'
         run: |
           aws lambda update-function-code \
             --function-name AuthCPF \
