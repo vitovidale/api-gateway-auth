@@ -3,7 +3,8 @@ name: Deploy AWS Lambda (Go)
 on:
   push:
     branches:
-      - develop  # Change to "main" if needed
+      - main
+  workflow_dispatch:  
 
 jobs:
   deploy:
@@ -32,13 +33,13 @@ jobs:
 
       - name: Check if Lambda Exists
         id: check_lambda
+        continue-on-error: true
         run: |
           if aws lambda get-function --function-name AuthCPF; then
             echo "LAMBDA_EXISTS=true" >> $GITHUB_ENV
           else
             echo "LAMBDA_EXISTS=false" >> $GITHUB_ENV
           fi
-        continue-on-error: true
 
       - name: Create Lambda Function (if not exists)
         if: env.LAMBDA_EXISTS == 'false'
@@ -57,3 +58,7 @@ jobs:
           aws lambda update-function-code \
             --function-name AuthCPF \
             --zip-file fileb://lambda.zip
+
+      - name: Publish New Lambda Version
+        run: |
+          aws lambda publish-version --function-name AuthCPF
