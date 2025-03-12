@@ -46,7 +46,7 @@ jobs:
           aws lambda create-function \
             --function-name AuthCPF \
             --runtime provided.al2 \
-            --role arn:aws:iam::<AWS_ACCOUNT_ID>:role/<LAMBDA_EXECUTION_ROLE> \
+            --role arn:aws:iam::209479263702:role/lambda-stack-MyGoFunctionRole-0TC7dMoqUHcU \
             --handler bootstrap \
             --zip-file fileb://lambda.zip \
             --architectures x86_64
