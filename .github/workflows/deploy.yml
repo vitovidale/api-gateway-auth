@@ -1,43 +1,37 @@
-name: Deploy API Gateway & Lambda
+name: Deploy AWS Lambda (Go)
 
 on:
   push:
     branches:
-      - develop
+      - develop  # Change to main if needed
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout do Código
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Configurar AWS CLI
+      - name: Set Up AWS CLI
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: us-east-1  # Change region if needed
 
-      - name: Instalar Python 3.11
-        uses: actions/setup-python@v5
+      - name: Set Up Golang
+        uses: actions/setup-go@v4
         with:
-          python-version: '3.11'
+          go-version: 1.21  # Change to your Go version
 
-      - name: Instalar AWS SAM CLI
+      - name: Build Go Binary for AWS Lambda
         run: |
-          pip install aws-sam-cli
+          GOOS=linux GOARCH=amd64 go build -o bootstrap main.go
+          zip lambda.zip bootstrap
 
-      - name: Build do Lambda
-        run: sam build --use-container
-
-      - name: Deploy do Lambda
+      - name: Deploy Lambda Function
         run: |
-          sam deploy \
-            --stack-name api-gateway-auth-stack \
-            --resolve-s3 \
-            --capabilities CAPABILITY_IAM \
-            --region us-east-1 \
-            --no-confirm-changeset \
-            --no-fail-on-empty-changeset
+          aws lambda update-function-code \
+            --function-name AuthCPF \
+            --zip-file fileb://lambda.zip
