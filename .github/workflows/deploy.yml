@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - develop
-  workflow_dispatch:  # ✅ Allows manual deployment trigger
+  workflow_dispatch:  
 
 jobs:
   deploy:
@@ -19,7 +19,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1  # Change if needed
+          aws-region: us-east-1 
 
       - name: Set Up Golang 1.23.4
         uses: actions/setup-go@v4
