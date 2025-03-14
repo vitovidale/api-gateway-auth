@@ -1,9 +1,9 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: A simple Go Lambda function
+Description: A Lambda function to check user authorization using JWT with auth0 provider
 
 Resources:
-  MyGoFunction:
+  AuthUser:
     Type: AWS::Serverless::Function
     Properties:
       Handler: bootstrap

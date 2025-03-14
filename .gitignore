@@ -1,2 +1,9 @@
 # remove the Lambda deployment package from source control
-bootstrap
+dist/bootstrap
+
+# remove test files from source control
+dist/*.txt
+dist/*.json
+
+# remove the env file from source control
+.env

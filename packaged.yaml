@@ -1,16 +1,16 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: A simple Go Lambda function
+Description: A Lambda function to check user authorization using JWT with auth0 provider
 Resources:
-  MyGoFunction:
+  AuthUser:
     Type: AWS::Serverless::Function
     Properties:
       Handler: bootstrap
       Runtime: provided.al2
-      CodeUri: s3://local-lambdas/35a990f301f304146ff4b04bb1320374
+      CodeUri: s3://local-lambdas/e63bfe4dc508cad52cf02b5bbec40d2b
       Architectures:
       - x86_64
       MemorySize: 128
       Timeout: 10
     Metadata:
-      SamResourceId: MyGoFunction
+      SamResourceId: AuthUser

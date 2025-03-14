@@ -14,6 +14,7 @@ type MyEvent struct {
 
 func HandleRequest(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	name := req.QueryStringParameters["name"]
+
 	message := fmt.Sprintf("Hello %s!", name)
 
 	return events.APIGatewayProxyResponse{
