@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: A Lambda function to check user authorization using JWT with auth0 provider
+Description: Authentication with Auth0 provider using JWT
 
 Resources:
   AuthUser:
@@ -13,3 +13,9 @@ Resources:
         - x86_64
       MemorySize: 128
       Timeout: 10
+      Environment:
+        Variables:
+          AUTH0_DOMAIN: fiap-tech-challenge.us.auth0.com
+          AUTH0_AUDIENCE: https://fiap-tech-challenge.us.auth0.com/api/v2/
+          AUTH0_CLIENT_ID: qum1LjLVtqDQV5VlcQzR2y36TGGq0PNV
+          AUTH0_CLIENT_SECRET: Qcjz_Nf74YjZxkujZfZNAHpjIjwTblZUHJKayX94hgFNkLWVqY8oMCZ8Y_UZIzOM
