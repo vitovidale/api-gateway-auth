@@ -33,7 +33,6 @@ jobs:
 
       - name: Build da Lambda (SAM Build)
         run: sam build --use-container
-        # --use-container garante que a build seja feita no mesmo ambiente que a AWS espera (Linux/amd64)
 
       - name: Package da Lambda (SAM Package)
         run: |
@@ -44,7 +43,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: 'us-east-1'
+          AWS_DEFAULT_REGION: us-east-1
 
       - name: Deploy da Lambda (SAM Deploy)
         run: |
@@ -56,7 +55,37 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: 'us-east-1'
+          AWS_DEFAULT_REGION: us-east-1
 
-      - name: Verificar o Deploy
+      - name: Aguardar Função Lambda Ativar
+        run: |
+          echo "Aguardando a função Lambda atingir o estado 'Active'..."
+          for i in {1..30}; do
+            status=$(aws lambda get-function --function-name AuthCPF --region us-east-1 --query 'Configuration.State' --output text)
+            echo "Estado atual: $status"
+            if [ "$status" = "Active" ]; then
+              echo "Função ativa!"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Timeout: A função Lambda não atingiu o estado Active."
+          exit 1
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+
+      - name: Publicar Versão da Lambda
+        run: aws lambda publish-version --function-name AuthCPF --region us-east-1
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+
+      - name: Verificar Status do Deploy
         run: aws cloudformation describe-stacks --stack-name auth-lambda --query "Stacks[0].StackStatus" --output text
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
