@@ -1,97 +1,62 @@
-name: Deploy AWS Lambda (Go)
+name: Deploy Lambda via SAM
 
 on:
-  push:
-    branches:
-      - develop
-  workflow_dispatch:  # ✅ Allows manual deployment trigger
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch a ser deployada'
+        required: true
+        default: 'main'
 
 jobs:
-  deploy:
+  deploy-lambda:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout do Repositório
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.branch }}
 
-      - name: Set Up AWS CLI
+      - name: Configurar AWS CLI
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1  # Change if needed
+          aws-region: us-east-1
 
-      - name: Set Up Golang 1.23.4
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.23.4
-
-      - name: Initialize Go Modules (if missing)
+      - name: Instalar SAM CLI
         run: |
-          if [ ! -f go.mod ]; then
-            go mod init lambda-function
-          fi
-          go mod tidy
+          curl -Lo sam.zip https://github.com/aws/aws-sam-cli/releases/latest/download/aws-sam-cli-linux-x86_64.zip
+          unzip sam.zip -d sam-installation
+          sudo ./sam-installation/install
 
-      - name: Build Go Binary for AWS Lambda
-        run: |
-          GOOS=linux GOARCH=amd64 go build -o bootstrap main.go
-          zip lambda.zip bootstrap
+      - name: Build da Lambda (SAM Build)
+        run: sam build --use-container
+        # --use-container garante que a build seja feita no mesmo ambiente que a AWS espera (Linux/amd64)
 
-      - name: Check if Lambda Exists
-        id: check_lambda
-        continue-on-error: true
+      - name: Package da Lambda (SAM Package)
         run: |
-          if aws lambda get-function --function-name AuthCPF; then
-            echo "LAMBDA_EXISTS=true" >> $GITHUB_ENV
-          else
-            echo "LAMBDA_EXISTS=false" >> $GITHUB_ENV
-          fi
+          sam package \
+            --template-file .aws-sam/build/template.yaml \
+            --output-template-file packaged.yaml \
+            --s3-bucket ${{ secrets.SAM_S3_BUCKET }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: 'us-east-1'
 
-      - name: Create Lambda Function (if not exists)
-        if: env.LAMBDA_EXISTS == 'false'
+      - name: Deploy da Lambda (SAM Deploy)
         run: |
-          aws lambda create-function \
-            --function-name AuthCPF \
-            --runtime provided.al2 \
-            --role arn:aws:iam::209479263702:role/lambda-stack-MyGoFunctionRole-0TC7dMoqUHcU \
-            --handler bootstrap \
-            --zip-file fileb://lambda.zip \
-            --architectures x86_64
+          sam deploy \
+            --template-file packaged.yaml \
+            --stack-name auth-lambda \
+            --capabilities CAPABILITY_IAM \
+            --no-fail-on-empty-changeset
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: 'us-east-1'
 
-      - name: Wait for Lambda to Be Ready (After Creation)
-        run: |
-          echo "Waiting for Lambda to be in Active state..."
-          while true; do
-            state=$(aws lambda get-function --function-name AuthCPF --query 'Configuration.State' --output text)
-            if [[ "$state" == "Active" ]]; then
-              echo "Lambda is now active."
-              break
-            fi
-            echo "Lambda is still in $state state. Waiting..."
-            sleep 10
-          done
-
-      - name: Update Lambda Function Code (if exists)
-        if: env.LAMBDA_EXISTS == 'true'
-        run: |
-          aws lambda update-function-code \
-            --function-name AuthCPF \
-            --zip-file fileb://lambda.zip
-
-      - name: Wait for Lambda Update to Complete
-        run: |
-          echo "Waiting for Lambda update to finish..."
-          while true; do
-            update_status=$(aws lambda get-function --function-name AuthCPF --query 'Configuration.LastUpdateStatus' --output text)
-            if [[ "$update_status" == "Successful" ]]; then
-              echo "Lambda update is complete."
-              break
-            fi
-            echo "Lambda update is still in progress. Waiting..."
-            sleep 10
-          done
-
-      - name: Publish New Lambda Version
-        run: |
-          aws lambda publish-version --function-name AuthCPF
+      - name: Verificar o Deploy
+        run: aws cloudformation describe-stacks --stack-name auth-lambda --query "Stacks[0].StackStatus" --output text
