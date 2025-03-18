@@ -29,7 +29,7 @@ jobs:
         run: |
           curl -Lo sam.zip https://github.com/aws/aws-sam-cli/releases/latest/download/aws-sam-cli-linux-x86_64.zip
           unzip sam.zip -d sam-installation
-          sudo ./sam-installation/install
+          sudo ./sam-installation/install --update
 
       - name: Build da Lambda (SAM Build)
         run: sam build --use-container
