@@ -28,7 +28,7 @@ jobs:
           docker rm temp-container
 
       - name: Package Lambda with SAM
-        run: sam package --output-template-file packaged.yaml --s3-bucket local-lambdas
+        run: sam package --output-template-file packaged.yaml --s3-bucket aws-sam-cli-managed-default-samclisourcebucket-fkv3r95havfr
 
       - name: Deploy Lambda with SAM
         run: sam deploy --template-file packaged.yaml --stack-name auth --capabilities CAPABILITY_IAM
