@@ -15,6 +15,7 @@ Resources:
       Timeout: 10
       Environment:
         Variables:
+          APP_ENV: production
           AUTH0_DOMAIN: fiap-tech-challenge.us.auth0.com
           AUTH0_AUDIENCE: https://fiap-tech-challenge.us.auth0.com/api/v2/
           AUTH0_CLIENT_ID: qum1LjLVtqDQV5VlcQzR2y36TGGq0PNV
