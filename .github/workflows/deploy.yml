@@ -35,7 +35,7 @@ jobs:
           sudo ./sam-installation/install --update
 
       - name: Build da Lambda (SAM Build)
-        run: sam build --use-container
+        run: sam build --template-file template.yaml --use-container
 
       - name: Package da Lambda (SAM Package)
         run: |
