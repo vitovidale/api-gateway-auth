@@ -1,3 +1,4 @@
+AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Lambda function for Auth0 authentication via API Gateway
 
@@ -16,6 +17,13 @@ Globals:
         AUTH0_CLIENT_SECRET: Qcjz_Nf74YjZxkujZfZNAHpjIjwTblZUHJKayX94hgFNkLWVqY8oMCZ8Y_UZIzOM
 
 Resources:
+  AuthApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: AuthApi
+      StageName: Prod
+      EndpointConfiguration: REGIONAL
+
   AuthUser:
     Type: AWS::Serverless::Function
     Properties:
@@ -26,14 +34,16 @@ Resources:
         Login:
           Type: Api
           Properties:
+            RestApiId: !Ref AuthApi
             Path: /auth/login
             Method: POST
 
 Outputs:
   ApiEndpoint:
-    Description: "API Gateway endpoint URL for Prod stage"
+    Description: "API Gateway endpoint URL"
     Value:
-      Fn::Sub: "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/auth/login"
+      Fn::Sub: "https://${AuthApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/auth/login"
+
   LambdaFunction:
     Description: "Lambda Function ARN"
     Value: !GetAtt AuthUser.Arn
