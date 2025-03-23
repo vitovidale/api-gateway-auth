@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Authentication with Auth0 provider using JWT
+Resources:
+  AuthUser:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: bootstrap
+      Runtime: provided.al2
+      CodeUri: s3://local-lambdas/fd599e96933d118ef4c4183981b64add
+      Architectures:
+      - x86_64
+      MemorySize: 128
+      Timeout: 10
+      Environment:
+        Variables:
+          AUTH0_DOMAIN: fiap-tech-challenge.us.auth0.com
+          AUTH0_AUDIENCE: https://fiap-tech-challenge.us.auth0.com/api/v2/
+          AUTH0_CLIENT_ID: qum1LjLVtqDQV5VlcQzR2y36TGGq0PNV
+          AUTH0_CLIENT_SECRET: Qcjz_Nf74YjZxkujZfZNAHpjIjwTblZUHJKayX94hgFNkLWVqY8oMCZ8Y_UZIzOM
+    Metadata:
+      SamResourceId: AuthUser
