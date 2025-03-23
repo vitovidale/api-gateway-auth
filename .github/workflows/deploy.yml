@@ -1,34 +1,49 @@
-name: Build and Deploy Lambda
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Lambda function for Auth0 authentication via API Gateway
 
-on:
-  workflow_dispatch:
+Globals:
+  Function:
+    Timeout: 5
+    Runtime: provided.al2
+    Architectures:
+      - arm64
+    MemorySize: 128
+    Environment:
+      Variables:
+        AUTH0_DOMAIN: fiap-tech-challenge.us.auth0.com
+        AUTH0_AUDIENCE: https://fiap-tech-challenge.us.auth0.com/api/v2/
+        AUTH0_CLIENT_ID: qum1LjLVtqDQV5VlcQzR2y36TGGq0PNV
+        AUTH0_CLIENT_SECRET: Qcjz_Nf74YjZxkujZfZNAHpjIjwTblZUHJKayX94hgFNkLWVqY8oMCZ8Y_UZIzOM
 
-jobs:
-  build-deploy:
-    runs-on: ubuntu-latest
+Resources:
+  AuthApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: AuthApi
+      StageName: Prod
+      EndpointConfiguration: REGIONAL
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
+  AuthUser:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: AuthUser
+      Handler: bootstrap
+      CodeUri: .
+      Events:
+        Login:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AuthApi
+            Path: /auth/login
+            Method: POST
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+Outputs:
+  ApiEndpoint:
+    Description: "API Gateway endpoint URL"
+    Value:
+      Fn::Sub: "https://${AuthApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/auth/login"
 
-      - name: Build Docker Image for Lambda
-        run: docker build -t lambda-builder .
-
-      - name: Build Lambda Binary from Docker Container
-        run: |
-          docker run --name temp-container lambda-builder
-          docker cp temp-container:/app/bootstrap ./bootstrap
-          docker rm temp-container
-
-      - name: Package Lambda with SAM
-        run: sam package --output-template-file packaged.yaml --s3-bucket aws-sam-cli-managed-default-samclisourcebucket-fkv3r95havfr
-
-      - name: Deploy Lambda with SAM
-        run: sam deploy --template-file packaged.yaml --stack-name auth --capabilities CAPABILITY_IAM
+  LambdaFunction:
+    Description: "Lambda Function ARN"
+    Value: !GetAtt AuthUser.Arn
